@@ -1,13 +1,21 @@
 import React, { useState } from 'react'
-import bg from "@/assets/login2.png"
 import Victory from "@/assets/victory.svg"
 import { Tabs, TabsContent, TabsList , TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import { axiosObj } from '@/lib/api-client'
+import { LOGIN_ROUTE, REGISTER_ROUTE } from '@/utils/constants'
+import { useNavigate } from 'react-router-dom'
+import { useAppStore } from '@/store'
+
 
 
 const Auth = () => {
 
+    const {setUserInfo} = useAppStore()
+
+    const navigate = useNavigate()
 
     const [formData , setFormData] = useState({
         email : "" ,
@@ -21,14 +29,57 @@ const Auth = () => {
     }
 
     
+    
     const handleLogin = async () => {
 
-    }
-    
-    
-    const handleRegister = async () => {
+        if(!formData.email || !formData.password){
+            return toast.error("All fields are required")
+        }
+
+        try {
+            
+            const {email , password} = formData
+            const response = await axiosObj.post(LOGIN_ROUTE , {email , password})
+
+            if(response.status === 200){
+                setUserInfo(response.data)
+                response.data.profileSetup ? navigate("/chat") : navigate("/profile")
+            }
+
+        } catch (error) {
+            toast.error(error.response.data.msg)
+        }
 
     }
+    
+    
+
+    const handleRegister = async () => {
+
+        if(!formData.email || !formData.password || !formData.confirmPassword){
+            return toast.error("All fields are required")
+        }
+
+        if(formData.password !== formData.confirmPassword){
+            return toast.error("password and confirm password should be same")            
+        }
+
+        try {
+
+            const response = await axiosObj.post(REGISTER_ROUTE , {...formData})
+
+            if(response.status === 201){
+                setUserInfo(response.data)
+                navigate("/profile")
+            }
+
+        } catch (error) {
+            toast.error(error.response.data.msg)
+        }
+
+
+    }
+
 
 
 
@@ -70,7 +121,7 @@ const Auth = () => {
                     <TabsContent className="flex flex-col gap-5 mt-10" value="register">
                         <Input name="email" onChange={handleChange} placeholder="name@example.com" type="email" className="rounded-full p-6" value={formData.email} />
                         <Input name="password" onChange={handleChange} placeholder="password" type="password" className="rounded-full p-6" value={formData.password} />
-                        <Input name="confirmPassword" onChange={handleChange} placeholder="confirm password" type="password" className="rounded-full p-6" value={formData.password} />
+                        <Input name="confirmPassword" onChange={handleChange} placeholder="confirm password" type="password" className="rounded-full p-6" value={formData.confirmPassword} />
                         <Button onClick={handleRegister} className="rounded-full p-6">Register</Button>
                     </TabsContent>
                 
